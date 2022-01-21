@@ -1,0 +1,9 @@
+# VSCode Environment
+.vscode
+
+# Build Directory
+build
+
+# Build Artifacts
+*.elf
+*.bin
