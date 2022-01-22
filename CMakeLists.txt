@@ -174,9 +174,10 @@ target_include_directories(stars
 )
 target_sources(stars
   PUBLIC
+    Core/Src/led_buffer.cc
     Core/Src/dma.c
     Core/Src/gpio.c
-    Core/Src/main.c
+    Core/Src/main.cc
     Core/Src/spi.c
     Core/Src/stm32f4xx_hal_msp.c
     Core/Src/stm32f4xx_it.c
