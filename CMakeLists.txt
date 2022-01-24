@@ -175,6 +175,8 @@ target_include_directories(stars
 target_sources(stars
   PUBLIC
     Core/Src/led_buffer.cc
+    Core/Src/motion_sensor.cc
+    Core/Src/status_led.cc
     Core/Src/dma.c
     Core/Src/gpio.c
     Core/Src/main.cc

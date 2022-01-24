@@ -29,6 +29,8 @@
 #include <stdint.h>
 
 #include "led_buffer.h"
+#include "motion_sensor.h"
+#include "status_led.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,7 +61,10 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static led_buffer<9> leds;
+
+static device::sk9822_buffer<9> leds(hspi1);
+static device::motion_sensor motion_sensor(GPIOA, GPIO_PIN_0);
+static device::status_led status_led(GPIOC, GPIO_PIN_13);
 /* USER CODE END 0 */
 
 /**
@@ -90,108 +95,87 @@ int main(void) {
     /* USER CODE END SysInit */
 
     /* Initialize all configured peripherals */
-    MX_GPIO_Init();
+    // MX_GPIO_Init();
     MX_DMA_Init();
     MX_SPI1_Init();
     /* USER CODE BEGIN 2 */
-    new (&leds) led_buffer<leds.size()>;
-    // const uint16_t NUM_LEDS = 9;
-    // uint8_t led_data[4 + 4 * NUM_LEDS + 4];
-
-    // for (uint32_t i = 0; i < 4; i++) {
-    //     led_data[i] = 0x00;
-    // }
-
-    // for (uint32_t i = 0; i < NUM_LEDS; i++) {
-    //     led_data[4 + 4 * i + 0] = 0b11100000 | 0b00000001;
-    //     led_data[4 + 4 * i + 1] = 0x01;
-    //     led_data[4 + 4 * i + 2] = 0x00;
-    //     led_data[4 + 4 * i + 3] = 0x00;
-    // }
-
-    // for (uint32_t i = 0; i < 4; i++) {
-    //     led_data[4 + 4 * NUM_LEDS + i] = 0xFF;
-    // }
-
+    leds.init();
+    motion_sensor.init();
+    status_led.init();
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    // uint8_t value = 0;
+    constexpr uint8_t max_brightness = 0xff;
+    uint16_t brightness = 0;
+
+    for (uint8_t i = 0; i < leds.size(); i++) {
+        leds[i].global_brightness = 0b00001;
+    }
+
     while (1) {
-        for (uint8_t i = 0; i < leds.size(); i++) {
-            leds[i].led[0] = 0xFF;
-            leds[i].led[1] = 0xFF;
-            leds[i].led[2] = 0xFF;
+        if (motion_sensor.is_motion_detected()) {
+            status_led.set_state(true);
+
+            // Turn on the led array slowly.
+            while (brightness < max_brightness) {
+                for (uint8_t i = 0; i < leds.size(); i++) {
+                    leds[i].led[0] = brightness;
+                    leds[i].led[1] = brightness;
+                    leds[i].led[2] = brightness;
+                }
+                leds.update();
+                brightness++;
+                HAL_Delay(10);
+            }
+            constexpr uint32_t delay = 5 * 60 * 1000;
+            HAL_Delay(delay);
+        } else {
+            status_led.set_state(false);
+
+            // Turn off the led array slowly.
+            while (brightness != 0) {
+                for (uint8_t i = 0; i < leds.size(); i++) {
+                    leds[i].led[0] = brightness;
+                    leds[i].led[1] = brightness;
+                    leds[i].led[2] = brightness;
+                }
+                leds.update();
+                brightness--;
+
+                if (motion_sensor.is_motion_detected()) {
+                    break;
+                }
+
+                HAL_Delay(10);
+            }
+            for (uint8_t i = 0; i < leds.size(); i++) {
+                leds[i].led[0] = brightness;
+                leds[i].led[1] = brightness;
+                leds[i].led[2] = brightness;
+            }
+            leds.update();
+
+            HAL_Delay(10);
         }
 
-        leds.update();
-        HAL_Delay(25);
-
-        for (uint8_t i = 0; i < leds.size(); i++) {
-            leds[i].led[0] = 0x00;
-            leds[i].led[1] = 0x00;
-            leds[i].led[2] = 0x00;
-        }
-
-        leds.update();
-        HAL_Delay(25);
-
-        // uint8_t leds_need_update = 0;
-
-        // if (value == 0)
-        // {
-        //   value = 0xFF;
-        // }
-        // else
-        // {
-        //   value = 0x00;
+        // for (uint8_t i = 0; i < leds.size(); i++) {
+        //     leds[i].led[0] = 0xFF;
+        //     leds[i].led[1] = 0xFF;
+        //     leds[i].led[2] = 0xFF;
         // }
 
-        // for (uint32_t led = 0; led < NUM_LEDS; led++)
-        // {
-        //   led_data[4 + 4 * led + 1] = value;
-        //   led_data[4 + 4 * led + 2] = value;
-        //   led_data[4 + 4 * led + 3] = value;
+        // leds.update();
+        // HAL_Delay(25);
+
+        // for (uint8_t i = 0; i < leds.size(); i++) {
+        //     leds[i].led[0] = 0x00;
+        //     leds[i].led[1] = 0x00;
+        //     leds[i].led[2] = 0x00;
         // }
 
-        // leds_need_update = 1;
-
-        // while (HAL_DMA_GetState(hspi1.hdmatx) != HAL_DMA_STATE_READY)
-        // {
-        //   HAL_Delay(1);
-        // }
-
-        // if (leds_need_update && HAL_DMA_GetState(hspi1.hdmatx) ==
-        // HAL_DMA_STATE_READY)
-        // {
-        //   HAL_SPI_Transmit_DMA(&hspi1, led_data, sizeof(led_data));
-        //   leds_need_update = 0;
-        // }
-
-        // HAL_Delay(500);
-
-        // HAL_StatusTypeDef status = HAL_SPI_Transmit(&hspi1, led_data,
-        // sizeof(led_data), 1000); HAL_StatusTypeDef status = HAL_OK; if
-        // (status == HAL_OK)
-        // {
-        //   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-        //   HAL_Delay(250);
-        //   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-        //   HAL_Delay(250);
-        // }
-        // else
-        // {
-        //   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-        //   HAL_Delay(50);
-        //   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-        //   HAL_Delay(50);
-        // }
-
-        // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
-        // HAL_Delay(250);
-        // HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
-        // HAL_Delay(250);
+        // leds.update();
+        // HAL_Delay(25);
 
         /* USER CODE END WHILE */
 
