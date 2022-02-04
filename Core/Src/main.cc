@@ -64,7 +64,7 @@ void SystemClock_Config(void);
 
 static device::sk9822_buffer<9> leds(hspi1);
 static device::motion_sensor motion_sensor(GPIOA, GPIO_PIN_0);
-static device::status_led status_led(GPIOC, GPIO_PIN_13);
+static device::status_led<false> status_led(GPIOC, GPIO_PIN_13);
 /* USER CODE END 0 */
 
 /**
@@ -158,30 +158,7 @@ int main(void) {
 
             HAL_Delay(10);
         }
-
-        // for (uint8_t i = 0; i < leds.size(); i++) {
-        //     leds[i].led[0] = 0xFF;
-        //     leds[i].led[1] = 0xFF;
-        //     leds[i].led[2] = 0xFF;
-        // }
-
-        // leds.update();
-        // HAL_Delay(25);
-
-        // for (uint8_t i = 0; i < leds.size(); i++) {
-        //     leds[i].led[0] = 0x00;
-        //     leds[i].led[1] = 0x00;
-        //     leds[i].led[2] = 0x00;
-        // }
-
-        // leds.update();
-        // HAL_Delay(25);
-
-        /* USER CODE END WHILE */
-
-        /* USER CODE BEGIN 3 */
     }
-    /* USER CODE END 3 */
 }
 
 /**
